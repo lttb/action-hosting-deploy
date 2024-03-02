@@ -80,7 +80,7 @@ async function execWithCredentials(
 
   try {
     await exec(
-      `bunx firebase-tools@${firebaseToolsVersion}`,
+      `firebase-tools`,
       [
         ...args,
         ...(projectId ? ["--project", projectId] : []),
