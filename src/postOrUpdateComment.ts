@@ -24,8 +24,7 @@ import {
 } from "./deploy";
 import { createDeploySignature } from "./hash";
 
-const BOT_SIGNATURE =
-  "<sub>🔥 via [Firebase Hosting GitHub Action](https://github.com/marketplace/actions/deploy-to-firebase-hosting) 🌎</sub>";
+const PERSISTENT_SIGNATURE = "65f014ba-2d77-4f11-bbac-0117b42f907b";
 
 export function createBotCommentIdentifier(signature: string) {
   return function isCommentByBot(comment): boolean {
@@ -44,29 +43,35 @@ export function getURLsMarkdownFromChannelDeployResult(
 }
 
 export function getChannelDeploySuccessComment(
-  result: ChannelSuccessResult,
+  results: ChannelSuccessResult[],
   commit: string
 ) {
+  return `
+Visit the preview URL for this PR (updated for commit ${commit}):
+
+${results.map((result) => {
   const deploySignature = createDeploySignature(result);
   const urlList = getURLsMarkdownFromChannelDeployResult(result);
   const { expireTime } = interpretChannelDeployResult(result);
 
   return `
-Visit the preview URL for this PR (updated for commit ${commit}):
-
 ${urlList}
 
 <sub>(expires ${new Date(expireTime).toUTCString()})</sub>
 
-${BOT_SIGNATURE}
+<sub>Sign: ${deploySignature}</sub>
+  `;
+})}
 
-<sub>Sign: ${deploySignature}</sub>`.trim();
+<sub>id: ${PERSISTENT_SIGNATURE}</sub>
+
+`.trim();
 }
 
 export async function postChannelSuccessComment(
   github: InstanceType<typeof GitHub>,
   context: Context,
-  result: ChannelSuccessResult,
+  results: ChannelSuccessResult[],
   commit: string
 ) {
   const commentInfo = {
@@ -74,7 +79,7 @@ export async function postChannelSuccessComment(
     issue_number: context.issue.number,
   };
 
-  const commentMarkdown = getChannelDeploySuccessComment(result, commit);
+  const commentMarkdown = getChannelDeploySuccessComment(results, commit);
 
   const comment = {
     ...commentInfo,
@@ -82,8 +87,7 @@ export async function postChannelSuccessComment(
   };
 
   startGroup(`Commenting on PR`);
-  const deploySignature = createDeploySignature(result);
-  const isCommentByBot = createBotCommentIdentifier(deploySignature);
+  const isCommentByBot = createBotCommentIdentifier(PERSISTENT_SIGNATURE);
 
   let commentId;
   try {
