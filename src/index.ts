@@ -47,11 +47,14 @@ const configuredChannelId = getInput("channelId");
 const isProductionDeploy = configuredChannelId === "live";
 const token = process.env.GITHUB_TOKEN || getInput("repoToken");
 const octokit = token ? getOctokit(token) : undefined;
-const entryPoint = getInput("entryPoint");
+const singleEntryPoint = getInput("entryPoint");
 const target = getInput("target");
 const firebaseToolsVersion = getInput("firebaseToolsVersion");
 
-async function run() {
+const packages = getInput("packages");
+const entryPointTemplate = getInput("entryPointTemplate");
+
+async function run(entryPoint: string) {
   const isPullRequest = !!context.payload.pull_request;
 
   let finish = (details: Object) => console.log(details);
@@ -166,4 +169,10 @@ async function run() {
   }
 }
 
-run();
+if (packages) {
+  JSON.parse(packages).forEach((pkg: string) => {
+    run(entryPointTemplate.replace("$ENTRY_POINT", pkg));
+  });
+} else {
+  run(singleEntryPoint);
+}
