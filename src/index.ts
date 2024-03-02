@@ -71,7 +71,7 @@ async function run(pkgs: string[]) {
       pkgs.map(async (pkg) => {
         let finish = (details: Object) => console.log(details);
         if (token && isPullRequest) {
-          finish = await createCheck(octokit, context);
+          finish = await createCheck(pkg, octokit, context);
         }
 
         try {
@@ -100,7 +100,8 @@ async function run(pkgs: string[]) {
                 summary: `[${hostname}](${url})`,
               },
             });
-            return deployment;
+
+            return;
           }
 
           const channelId = getChannelId(configuredChannelId, context);
@@ -136,7 +137,7 @@ async function run(pkgs: string[]) {
             },
           });
 
-          return deployment;
+          return { deployment, pkg };
         } catch (e) {
           setFailed(e.message);
 
@@ -151,15 +152,12 @@ async function run(pkgs: string[]) {
       })
     );
 
-    if (token && isPullRequest && !!octokit) {
+    const results = deployments.filter(Boolean);
+
+    if (token && isPullRequest && !!octokit && results.length) {
       const commitId = context.payload.pull_request?.head.sha.substring(0, 7);
 
-      await postChannelSuccessComment(
-        octokit,
-        context,
-        deployments as ChannelSuccessResult[],
-        commitId
-      );
+      await postChannelSuccessComment(octokit, context, results, commitId);
     }
   } catch (e) {
     setFailed(e.message);

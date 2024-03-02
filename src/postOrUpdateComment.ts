@@ -43,25 +43,26 @@ export function getURLsMarkdownFromChannelDeployResult(
 }
 
 export function getChannelDeploySuccessComment(
-  results: ChannelSuccessResult[],
+  results: { deployment: ChannelSuccessResult; pkg: string }[],
   commit: string
 ) {
   return `
 Visit the preview URL for this PR (updated for commit ${commit}):
 
-${results.map((result) => {
-  const deploySignature = createDeploySignature(result);
-  const urlList = getURLsMarkdownFromChannelDeployResult(result);
-  const { expireTime } = interpretChannelDeployResult(result);
+${results
+  .map(({ deployment, pkg }) => {
+    const deploySignature = createDeploySignature(deployment);
+    const urlList = getURLsMarkdownFromChannelDeployResult(deployment);
+    const { expireTime } = interpretChannelDeployResult(deployment);
 
-  return `
+    return `
+**${pkg}**
 ${urlList}
-
 <sub>(expires ${new Date(expireTime).toUTCString()})</sub>
-
 <sub>Sign: ${deploySignature}</sub>
   `;
-})}
+  })
+  .join("\n")}
 
 <sub>id: ${PERSISTENT_SIGNATURE}</sub>
 
@@ -71,7 +72,7 @@ ${urlList}
 export async function postChannelSuccessComment(
   github: InstanceType<typeof GitHub>,
   context: Context,
-  results: ChannelSuccessResult[],
+  results: { deployment: ChannelSuccessResult; pkg: string }[],
   commit: string
 ) {
   const commentInfo = {

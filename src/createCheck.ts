@@ -18,12 +18,13 @@ import type { GitHub } from "@actions/github/lib/utils";
 
 // create a check and return a function that updates (completes) it
 export async function createCheck(
+  pkg: string,
   github: InstanceType<typeof GitHub>,
   context: Context
 ) {
   const check = await github.rest.checks.create({
     ...context.repo,
-    name: "Deploy Preview",
+    name: `${pkg}: deploy preview`,
     head_sha: context.payload.pull_request?.head.sha,
     status: "in_progress",
   });
