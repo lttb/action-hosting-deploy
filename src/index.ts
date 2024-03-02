@@ -54,7 +54,7 @@ const firebaseToolsVersion = getInput("firebaseToolsVersion");
 const packages = getInput("packages");
 const entryPointTemplate = getInput("entryPointTemplate");
 
-async function run(entryPoint: string) {
+async function run(pkg: string) {
   const isPullRequest = !!context.payload.pull_request;
 
   let finish = (details: Object) => console.log(details);
@@ -63,25 +63,7 @@ async function run(entryPoint: string) {
   }
 
   try {
-    startGroup("Verifying firebase.json exists");
-
-    if (entryPoint !== ".") {
-      console.log(`Changing to directory: ${entryPoint}`);
-      try {
-        process.chdir(entryPoint);
-      } catch (err) {
-        throw Error(`Error changing to directory ${entryPoint}: ${err}`);
-      }
-    }
-
-    if (existsSync("./firebase.json")) {
-      console.log("firebase.json file found. Continuing deploy.");
-    } else {
-      throw Error(
-        "firebase.json file not found. If your firebase.json file is not in the root of your repo, edit the entryPoint option of this GitHub action."
-      );
-    }
-    endGroup();
+    console.log(`Using "${pkg}" package`);
 
     startGroup("Setting up CLI credentials");
     const gacFilename = await createGacFile(googleApplicationCredentials);
@@ -92,7 +74,7 @@ async function run(entryPoint: string) {
 
     if (isProductionDeploy) {
       startGroup("Deploying to production site");
-      const deployment = await deployProductionSite(gacFilename, {
+      const deployment = await deployProductionSite(gacFilename, pkg, {
         projectId,
         target,
         firebaseToolsVersion,
@@ -118,7 +100,7 @@ async function run(entryPoint: string) {
     const channelId = getChannelId(configuredChannelId, context);
 
     startGroup(`Deploying to Firebase preview channel ${channelId}`);
-    const deployment = await deployPreview(gacFilename, {
+    const deployment = await deployPreview(gacFilename, pkg, {
       projectId,
       expires,
       channelId,
@@ -136,11 +118,6 @@ async function run(entryPoint: string) {
     setOutput("urls", urls);
     setOutput("expire_time", expireTime);
     setOutput("details_url", urls[0]);
-
-    const urlsListMarkdown =
-      urls.length === 1
-        ? `[${urls[0]}](${urls[0]})`
-        : urls.map((url) => `- [${url}](${url})`).join("\n");
 
     if (token && isPullRequest && !!octokit) {
       const commitId = context.payload.pull_request?.head.sha.substring(0, 7);

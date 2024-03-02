@@ -72,6 +72,7 @@ async function execWithCredentials(
   args: string[],
   projectId,
   gacFilename,
+  pkg: string,
   opts: { debug?: boolean; firebaseToolsVersion?: string }
 ) {
   let deployOutputBuf: Buffer[] = [];
@@ -80,7 +81,7 @@ async function execWithCredentials(
 
   try {
     await exec(
-      `firebase-tools`,
+      `bun run --cwd ${pkg} firebase`,
       [
         ...args,
         ...(projectId ? ["--project", projectId] : []),
@@ -109,7 +110,7 @@ async function execWithCredentials(
       console.log(
         "Retrying deploy with the --debug flag for better error output"
       );
-      await execWithCredentials(args, projectId, gacFilename, {
+      await execWithCredentials(args, projectId, gacFilename, pkg, {
         debug: true,
         firebaseToolsVersion,
       });
@@ -125,6 +126,7 @@ async function execWithCredentials(
 
 export async function deployPreview(
   gacFilename: string,
+  pkg: string,
   deployConfig: ChannelDeployConfig
 ) {
   const { projectId, channelId, target, expires, firebaseToolsVersion } =
@@ -139,6 +141,7 @@ export async function deployPreview(
     ],
     projectId,
     gacFilename,
+    pkg,
     { firebaseToolsVersion }
   );
 
@@ -151,6 +154,7 @@ export async function deployPreview(
 
 export async function deployProductionSite(
   gacFilename,
+  pkg: string,
   productionDeployConfig: ProductionDeployConfig
 ) {
   const { projectId, target, firebaseToolsVersion } = productionDeployConfig;
@@ -159,6 +163,7 @@ export async function deployProductionSite(
     ["deploy", "--only", `hosting${target ? ":" + target : ""}`],
     projectId,
     gacFilename,
+    pkg,
     { firebaseToolsVersion }
   );
 
