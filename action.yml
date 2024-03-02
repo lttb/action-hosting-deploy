@@ -59,6 +59,16 @@ inputs:
       The version of firebase-tools to use. Defaults to `latest`.
     default: latest
     required: false
+  packages:
+    description: >-
+      list of changed packages
+    default: ""
+    required: false
+  entryPointTemplate:
+    description: >-
+      template like './path/to/$ENTRY_POINT'
+    default: ""
+    required: false
 outputs:
   urls:
     description: The url(s) deployed to
